@@ -48,14 +48,7 @@ label {
 	color: #555555;
 }
 
-.reset-btn {
-	background: red;
-	font-weight: bold;
-}
 
-.reset-btn:hover {
-	background: darkred;
-}
 
 input[type="number"],
 input[type="text"],
@@ -76,6 +69,14 @@ select:focus {
 	background-color: #ffffff;
 	outline: none;
 	border-color: #007bff;
+}
+.reset-btn {
+	background: red;
+	font-weight: bold;
+}
+
+.reset-btn:hover {
+	background: darkred;
 }
 
 button {
