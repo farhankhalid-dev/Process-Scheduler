@@ -183,102 +183,95 @@ function solve() {
 			}
 		}
 	} else if (algorithm === "SJF") {
-		while (completedProcesses < numProcesses) {
-			let process = processes
-				.filter((p) => p.arrival <= time && !p.completed)
-				.sort((a, b) => a.burst - b.burst)[0];
-			if (process) {
-				ganttChart.push({
-					process: process.id,
-					start: time,
-					end: time + process.burst,
-				});
-				time += process.burst;
-				process.completed = true;
-				process.finish = time;
-				completedProcesses++;
-			} else {
-				addIdleTime();
-				time++;
-			}
-		}
-	} else if (algorithm === "Priority") {
-		while (completedProcesses < numProcesses) {
-			let process = processes
-				.filter((p) => p.arrival <= time && !p.completed)
-				.sort((a, b) => a.priority - b.priority)[0];
-			if (process) {
-				ganttChart.push({
-					process: process.id,
-					start: time,
-					end: time + process.burst,
-				});
-				time += process.burst;
-				process.completed = true;
-				process.finish = time;
-				completedProcesses++;
-			} else {
-				addIdleTime();
-				time++;
-			}
-		}
-	} else if (algorithm === "RR") {
-		// Sort processes by arrival time initially
-		processes.sort((a, b) => a.arrival - b.arrival);
+    while (completedProcesses < numProcesses) {
+        let process = processes
+            .filter((p) => p.arrival <= time && !p.completed)
+            .sort((a, b) => {
+                if (a.burst === b.burst) {
+                    return a.arrival - b.arrival;
+                }
+                return a.burst - b.burst;
+            })[0];
 
-		while (completedProcesses < numProcesses) {
-			let allProcessesCompleted = true;
+        if (process) {
+            ganttChart.push({
+                process: process.id,
+                start: time,
+                end: time + process.burst,
+            });
+            time += process.burst;
+            process.completed = true;
+            process.finish = time;
+            completedProcesses++;
+        } else {
+            addIdleTime();
+            time++;
+        }
+    }
+} else if (algorithm === "Priority") {
+    while (completedProcesses < numProcesses) {
+        let process = processes
+            .filter((p) => p.arrival <= time && !p.completed)
+            .sort((a, b) => {
+                if (a.priority === b.priority) {
+                    return a.arrival - b.arrival;
+                }
+                return a.priority - b.priority;
+            })[0];
 
-			// Add newly arrived processes to the ready queue
-			processes.forEach((p) => {
-				if (!p.completed && p.arrival <= time && !readyQueue.includes(p)) {
-					readyQueue.push(p);
-				}
-			});
+        if (process) {
+            ganttChart.push({
+                process: process.id,
+                start: time,
+                end: time + process.burst,
+            });
+            time += process.burst;
+            process.completed = true;
+            process.finish = time;
+            completedProcesses++;
+        } else {
+            addIdleTime();
+            time++;
+        }
+    }
+}
+ else if (algorithm === 'RR') {
+    // Sort processes by arrival time initially
+    processes.sort((a, b) => a.arrival - b.arrival);
 
-			if (readyQueue.length > 0) {
-				allProcessesCompleted = false;
-				let process = readyQueue.shift(); // Get the next process to execute
+    let currentProcessIndex = 0;
 
-				if (process.remaining > quantum) {
-					ganttChart.push({
-						process: process.id,
-						start: time,
-						end: time + quantum,
-					});
-					time += quantum;
-					process.remaining -= quantum;
-				} else {
-					ganttChart.push({
-						process: process.id,
-						start: time,
-						end: time + process.remaining,
-					});
-					time += process.remaining;
-					process.remaining = 0;
-					process.completed = true;
-					process.finish = time;
-					completedProcesses++;
-				}
+    while (completedProcesses < numProcesses) {
+        let found = false;
 
-				// Add the process back to the ready queue if it has remaining time
-				if (process.remaining > 0) {
-					readyQueue.push(process);
-				}
+        for (let i = 0; i < numProcesses; i++) {
+            let process = processes[(currentProcessIndex + i) % numProcesses];
 
-				// Add newly arrived processes to the ready queue
-				processes.forEach((p) => {
-					if (!p.completed && p.arrival <= time && !readyQueue.includes(p)) {
-						readyQueue.push(p);
-					}
-				});
-			} else {
-				addIdleTime();
-				time++;
-			}
-		}
-	}
+            if (process.arrival <= time && process.remaining > 0) {
+                found = true;
+                if (process.remaining > quantum) {
+                    ganttChart.push({ process: process.id, start: time, end: time + quantum });
+                    time += quantum;
+                    process.remaining -= quantum;
+                } else {
+                    ganttChart.push({ process: process.id, start: time, end: time + process.remaining });
+                    time += process.remaining;
+                    process.remaining = 0;
+                    process.completed = true;
+                    process.finish = time;
+                    completedProcesses++;
+                }
+                currentProcessIndex = (currentProcessIndex + i + 1) % numProcesses;
+                break;
+            }
+        }
 
+        if (!found) {
+            addIdleTime();
+            time++;
+        }
+    }
+}
 	processes.forEach((p) => {
 		p.turnaround = p.finish - p.arrival;
 		p.waiting = p.turnaround - p.burst;
