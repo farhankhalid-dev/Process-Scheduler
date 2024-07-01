@@ -58,7 +58,7 @@ function generateInputs() {
 			priorityInput.placeholder = "Priority";
 			priorityInput.required = true;
 			div.appendChild(priorityInput);
-		}
+		}1
 
 		processInputs.appendChild(div);
 	}
@@ -401,35 +401,50 @@ function displayGanttChart(ganttChart) {
 }
 
 function displayResultsTable(processes, algorithm) {
-	const resultsTableDiv = document.getElementById("resultsTable");
-	resultsTableDiv.innerHTML = "<h2>Results</h2>";
+  const resultsTableDiv = document.getElementById("resultsTable");
+  resultsTableDiv.innerHTML = "<h2>Results</h2>";
 
-	let table = "<table>";
-	table += "<tr><th>Process</th><th>Burst Time</th><th>Arrival Time</th>";
-	if (algorithm === "Priority") {
-		table += "<th>Priority</th>";
-	}
-	table += "<th>Turnaround Time</th><th>Waiting Time</th></tr>";
+  let table = "<table>";
+  table += "<tr><th>Process</th><th>Burst Time</th><th>Arrival Time</th>";
+  if (algorithm === "Priority") {
+      table += "<th>Priority</th>";
+  }
+  table += "<th>Turnaround Time</th><th>Waiting Time</th></tr>";
 
-	let totalTurnaround = 0;
-	let totalWaiting = 0;
+  let totalTurnaround = 0;
+  let totalWaiting = 0;
+  let totalBurst = 0;
+  let totalExecutionTime = 0;
 
-	processes.forEach((p) => {
-		table += `<tr><td>${p.id}</td><td>${p.burst}</td><td>${p.arrival}</td>`;
-		if (algorithm === "Priority") {
-			table += `<td>${p.priority}</td>`;
-		}
-		table += `<td>${p.turnaround}</td><td>${p.waiting}</td></tr>`;
-		totalTurnaround += p.turnaround;
-		totalWaiting += p.waiting;
-	});
+  // Calculate total burst time of all processes
+  processes.forEach((p) => {
+      totalBurst += p.burst;
+  });
 
-	const avgTurnaround = (totalTurnaround / processes.length).toFixed(2);
-	const avgWaiting = (totalWaiting / processes.length).toFixed(2);
+  // Calculate turnaround and waiting times, and build the table rows
+  processes.forEach((p) => {
+      totalTurnaround += p.turnaround;
+      totalWaiting += p.waiting;
+      table += `<tr class="${p.id}"><td>${p.id}</td><td>${p.burst}</td><td>${p.arrival}</td>`;
+      if (algorithm === "Priority") {
+          table += `<td>${p.priority}</td>`;
+      }
+      table += `<td>${p.turnaround}</td><td>${p.waiting}</td></tr>`;
+  });
 
-	table += `<tr><td colspan="${algorithm === "Priority" ? 4 : 3}">Average</td>`;
-	table += `<td>${avgTurnaround}</td><td>${avgWaiting}</td></tr>`;
+  // Calculate CPU utilization percentage
+  totalExecutionTime = processes[processes.length - 1].finish;
+  const cpuUtilization = ((totalBurst / totalExecutionTime) * 100).toFixed(2);
 
-	table += "</table>";
-	resultsTableDiv.innerHTML += table;
+  const avgTurnaround = (totalTurnaround / processes.length).toFixed(2);
+  const avgWaiting = (totalWaiting / processes.length).toFixed(2);
+
+  table += `<tr><td colspan="${algorithm === "Priority" ? 4 : 3}">Average</td>`;
+  table += `<td>${avgTurnaround}</td><td>${avgWaiting}</td></tr>`;
+
+  table += `<tr><td colspan="${algorithm === "Priority" ? 4 : 3}">CPU Utilization (%)</td>`;
+  table += `<td colspan="2">${cpuUtilization}</td></tr>`;
+
+  table += "</table>";
+  resultsTableDiv.innerHTML += table;
 }
